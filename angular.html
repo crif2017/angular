@@ -1,0 +1,61 @@
+<!DOCTYPE html!>
+<html>
+<head>
+	<script src="angular.min.js"></script>
+	
+	<title>angular</title>
+	
+	<script type="text/javascript">
+		
+		var myModule = angular.module('myModule', []);
+		
+		myModule.controller('myController', function ( $scope ) {
+			
+			$scope.condition = false;
+			$scope.message = "hello \" world !";
+			$scope.func = function ( str ) {
+				return str + " - " + str;
+			};
+			$scope.range = function ( n ) {
+				var tab = [];
+				for ( var i = 0; i < n; i++ )
+					tab.push(i);
+				return tab;
+			};
+			
+			$scope.myList = [
+				{name: "String1"},
+				{name: "String2"},
+				{name: "String3"},
+				{name: "String4"},
+				{name: "String5"},
+			];
+			
+			$scope.ternaryColor = function ( n ) {
+				var colors = ['red', 'blue', 'green'];
+				return colors[n % colors.length];
+			};
+			
+		});
+		
+		
+	</script>
+</head>
+<body>
+	
+	<div ng-app="myModule" ng-controller="myController">
+		
+		<table border="1">
+			<tr>
+				<td ng-repeat="idx in range(15) track by $index"
+					style="background: {{ ternaryColor(!((idx + 1) % 4) ? 2 : (idx % 2)) }};"
+				>
+					{{!((idx + 1) % 4) ? '2' : (idx % 2) }}
+				</td>
+			</tr>
+		</table>
+		
+	</div>
+	
+</body>
+</head>
