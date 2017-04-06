@@ -1,0 +1,59 @@
+<!DOCTYPE html!>
+<html>
+<head>
+	<script src="angular.min.js"></script>
+	
+	<title>angular</title>
+	
+	<script type="text/javascript">
+		
+		
+		var ModuleCouleur = angular.module('Couleur', []);
+		ModuleCouleur.controller('CouleurC', function ( $scope ) {
+			$scope.lines = 15;
+			$scope.cols = 15;
+			$scope.r = 0;
+			$scope.g = 0;
+			$scope.b = 0;
+			$scope.Math = Math;
+		});
+		
+		ModuleCouleur.filter('range', function() {
+			return function ( n ) {
+				var tab = [];
+				for ( var i = 0; i < n; i++ )
+					tab.push(i);
+				return tab;
+			};
+		});
+		
+		
+		ModuleCouleur.filter('blue', function() {
+			return function ( i, j, lines, cols ) {
+				return	parseInt(Math.sqrt(i*i + j*j) /
+						Math.sqrt(lines*lines + cols*cols) * 100);
+			};
+		});
+		
+		
+		
+	</script>
+</head>
+<body ng-app="Couleur" ng-controller="CouleurC">
+	R : <input type="number" min="0" max="255" ng-model="r" />
+	G : <input type="number" min="0" max="255" ng-model="g" />
+	B : <input type="number" min="0" max="255" ng-model="b" />
+	<table>
+		<tr ng-repeat="i in lines|range">
+			<td
+				ng-repeat="j in cols|range"
+				style="background: rgb({{r + i * 15}}, {{g + j * 15}}, {{b + i|blue:j:lines:cols }});
+						color: rgb({{255 - r}}, {{255 - g}}, {{255 - b}});
+				"
+			>
+				rgb({{r + i * 15}}, {{g + j * 15}}, {{b + i|blue:j:lines:cols}});
+			</td>
+		</tr>
+	</table>
+</body>
+</head>
