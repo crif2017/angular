@@ -1,0 +1,66 @@
+<!DOCTYPE html!>
+<html>
+<head>
+	<script src="angular.min.js"></script>
+	
+	<title>angular</title>
+	
+	<script type="text/javascript">
+		var colors = ['black', 'red', 'yellow'];	
+		var AngularScope = 2;
+		
+		
+		var ModuleDamier = angular.module('Damier', []);
+		ModuleDamier.controller('DamierC', function ( $scope ) {
+			$scope.lines = 15;
+			$scope.cols = 15;
+			$scope.pad = 10;
+		});
+		
+		ModuleDamier.filter('range', function() {
+			return function ( n ) {
+				var tab = [];
+				for ( var i = 0; i < n; i++ )
+					tab.push(i);
+				return tab;
+			};
+		})
+		ModuleDamier.filter('triColor', ['rangeFilter', function (range) {
+			return function( n ) {
+				return colors[ n % colors.length ];
+			};
+		}])
+		
+	</script>
+</head>
+<body ng-app="Damier" ng-controller="DamierC">
+	<input type="number" ng-model="pad">
+	Nb ligne : <input type="number" ng-model="lines">
+	Ng cols : <input type="number" ng-model="cols">
+	Ajouter une ligne : <input type="button" ng-click="lines = lines + 1" />
+	Ajouter une colonne : <input type="button" ng-click="cols = cols + 1"/>
+	<div>
+	<style scoped type="text/css">
+		
+		td {
+			padding: {{pad}}px;
+		}
+		
+	</style>
+	
+	
+	<pre>
+		{{myColors}}
+	</pre>
+	</div>
+	<table border="1" >
+		<tr ng-repeat="i in lines|range track by $index">
+			<td ng-repeat="j in cols|range track by $index"
+				style="background-color: {{ (i + j)|triColor }}; color: white;"
+			>
+				{{$parent.$index}}  - {{$index}}
+			</td>
+		</tr>
+	</table>
+</body>
+</head>
