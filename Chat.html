@@ -1,0 +1,180 @@
+<!DOCTYPE html!>
+<html>
+<head>
+	<script src="angular.min.js"></script>
+	
+	<title>angular</title>
+	
+	<script type="text/javascript">
+		
+		var ModuleChat = angular.module('Chat', []);
+		ModuleChat.controller('ChatC', function ( $scope, Messages ) {
+			$scope.Messages = Messages;
+		});
+		
+		ModuleChat.factory('Messages', function () {
+			return {
+				messages: [
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+					{user: "User1", date:new Date(), msg: 'Hello World !'},
+				],
+				addMessage: function ( pseudo, msg ) {
+					this.messages.push({
+						user: pseudo,
+						date: new Date(),
+						msg: msg
+					});
+				},
+				delMessage: function ( i ) {
+					this.messages.splice(i, 1);
+				}
+			};
+		});
+		
+		ModuleChat.filter('dateFormat', function () {
+			return function ( date ) {
+				return ("0" + date.getDate()).slice(-2) + '/' + 
+					("0" + (date.getMonth() + 1)).slice(-2) + '/' + 
+					date.getFullYear() + " " +
+					("0" + date.getHours()).slice(-2) + ":" +
+					("0" + date.getMinutes()).slice(-2);
+			};
+		});
+		
+		
+	</script>
+	<style type="text/css">
+		
+		h1 {
+			text-align: center;
+		}
+		
+		.loginForm {
+			margin: 0 auto;
+			width: 33%;
+			min-width: 250px;
+		}
+		
+		.loginForm input {
+			display: block;
+			width: 50%;
+			padding: 0;
+			margin: 0 auto;
+		}
+		
+		.messages, .message, .message > span, .message > div {
+			float: left;
+		}
+		
+		.messages {
+			position: absolute;
+			width: 99%;
+			float: left;
+			height: 100%;
+			top: 0;
+			left: 0.5%;
+		}
+		
+		.messages .wrapper {
+			position: absolute;
+			border: 1px solid #ccc;
+			top: 4em;
+			bottom: 8.5em;
+			left: 0;
+			right: 0;
+			overflow: auto;
+		}
+		
+		.message {
+			clear: both;
+		}
+		
+		.date {
+			color: #aaa;
+		}
+		
+		.text {
+			font-style: italic;
+		}
+		
+		.pseudo {
+			padding: 0 0.5em;
+		}
+		
+		.input {
+			position: absolute;
+			bottom: 0.25em;
+			left: 0;
+			padding: 0;
+			margin: 0;
+			width: 100%;
+		}
+		
+		.input textarea {
+			position: relative;
+			display: block;
+			width: calc(99% - 7em);
+			margin: 0;
+			height: calc(10em - 2px);
+			left: 0.5%;
+			bottom: 1px;
+		}
+		
+		.input input {
+			position: absolute;
+			bottom: 0;
+			right: 0.5%;
+			height: 9.75em;
+			padding: 0;
+			margin: 0;
+			width: 7em;
+			text-align: center;
+		}
+		
+		
+		
+	</style>
+</head>
+<body ng-app="Chat" ng-controller="ChatC">
+	
+	<div class="loginForm" ng-hide="pseudo && connected">
+		<h1>Chat angular</h1>
+		<br />
+		<br />
+		<input type="text" placeholder="pseudo" ng-model="pseudo" />
+		<br />
+		<input type="button" value="connexion" ng-click="connected = pseudo" />
+	</div>
+	
+	<div class="chatForm" ng-show="pseudo && connected">
+		
+		<div class="messages">
+			<h1>Chat angular : &lt;{{pseudo}}&gt;</h1>
+			<div class="wrapper">
+			
+				<div class="message" ng-repeat="m in Messages.messages track by $index">
+					<span class="date">{{m.date|dateFormat}}</span>
+					<span class="pseudo">&lt;{{m.user}}&gt;</span>
+					<div class="text">{{m.msg}}</div>
+				</div>
+			
+			</div>
+			
+		</div>
+		
+		<div class="input">
+			<textarea ng-model="msg"></textarea>
+			<input type="button" value="envoyer" ng-click="Messages.addMessage(pseudo, msg); msg = '';"/>
+		</div>
+		
+	</div>
+	
+	
+</body>
+</head>
