@@ -29,8 +29,15 @@
 			});
 			
 			DBModule.controller('MainController', function ( $scope, Tables ) {
+				
+				Tables.addTable('Users');
+				Tables.addField(0, 'login');
+				Tables.addField(0, 'password');
+				
+				$scope.pSize = 2;
+				$scope.page = 0;
 				$scope.Tables = Tables;
-				$scope.edit= -1;
+				$scope.edit= 0;
 				$scope.copy = function ( obj ) {
 					console.log("hello");
 					console.log(obj);
@@ -54,12 +61,18 @@
 				<input type="button" value="+" ng-click="Tables.addTable(tableName); tableName = '';" />
 			</li>
 			<li ng-repeat="t in Tables.tables track by $index">
-				{{t.name}}
+				{{t.name}} <!-- affichage du nom de la table -->
+				
+				
+				<!-- boutton d'edition de la table-->
 				<input type="button" value="?" ng-click="$parent.edit = $index;" />
+				
+				<!-- boutton de suppression de la table-->
 				<input type="button" value="x" ng-click="Tables.delTable($index);" />
 			</li>
 		</ul>
 		<div ng-show="edit >= 0">
+			<!-- affichage du nom de la table selectionnée -->
 			<h1>table #{{edit}} : {{Tables.tables[edit].name}}</h1>
 			
 			<ul>
@@ -68,8 +81,11 @@
 					<input type="text" ng-model="fieldName" />
 					<input type="button" value="+" ng-click="Tables.addField(edit, fieldName); fieldName = '';" />
 				</li>
+				
+				<!-- affichage de la liste des champs de la table selectionnée -->
 				<li ng-repeat="f in Tables.tables[edit].fields track by $index">
 					{{f}}
+					<!-- boutton de suppression du champs-->
 					<input type="button" value="x" ng-click="Tables.delField(edit, $index);" />
 				</li>
 			</ul>
@@ -81,7 +97,7 @@
 					</th>
 				</tr>
 				
-				<tr ng-repeat="d in Tables.tables[edit].data track by $index" >
+				<tr ng-repeat="d in Tables.tables[edit].data.slice(page * pSize, (page + 1) * pSize) track by $index" >
 					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
 						<input type="text" ng-model="d[f]" />
 					</td>
@@ -96,6 +112,19 @@
 				<tr>
 					<td colspan="{{Tables.tables[edit].fields.length}}">
 						<input type="button" value="ajouter" ng-click="Tables.tables[edit].data.push(newD); newD = {};"/>
+						
+						
+						{{Tables.tables[edit].data.length}}
+						: {{page}} -
+						{{pSize}}
+					</td>
+				</tr>
+				
+				<tr>
+					<td colspan="{{Tables.tables[edit].fields.length}}">
+						<input ng-show="page > 0" type="button" value="&lt;" ng-click="page = page - 1" />
+						<input type="number" ng-model="pSize" />
+						<input ng-show="page * pSize < Tables.tables[edit].data.length" type="button" value="&gt;" ng-click="page = page + 1" />
 					</td>
 				</tr>
 			</table>
