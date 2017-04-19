@@ -1,6 +1,50 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<style type="text/css">
+			
+			body {
+				height: 100%;
+				background: red;
+				padding: 0;
+				margin: 0;
+			}
+			
+			.tblList {
+				padding: 0;
+				margin: 0;
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				background: #ddd;
+				width: 15em;
+				overflow: auto;
+			}
+			
+			.editor {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 15em;
+				right: 0;
+				background: #ccc;
+				overflow: auto;
+			}
+			
+			.editor h1 {
+				padding-left: 0.5em;
+			}
+			
+			h3 {
+				padding-left: 1em;
+			}
+			
+			.input {
+				background: #ffcccc;
+			}
+			
+		</style>
 		
 		<script type="text/javascript" src="angular.min.js"></script>
 		<script type="text/javascript">
@@ -34,6 +78,7 @@
 				Tables.addField(0, 'login');
 				Tables.addField(0, 'password');
 				
+				$scope.filtreData = [];
 				$scope.pSize = 2;
 				$scope.page = 0;
 				$scope.Tables = Tables;
@@ -48,35 +93,59 @@
 				};
 			});
 			
+			DBModule.filter('valueFilter', function () {
+				return function ( data, fData ) {
+					var newArray = [];
+					var match = true;
+					
+					
+					for ( var i = 0; i < data.length; i++ ) {
+						
+						for ( var j = 0; j < fData.length; j++ )
+							match = match && ( data[i][fData[j].name] === fData[j].value );
+							
+						if ( match )
+							newArray.push(data[i]);
+						
+						console.log(match);
+						console.log(data[i]);
+					}
+					return newArray;
+				};
+			});
+			
 		</script>
 		
 	</head>
 	
 	<body ng-app="DBModule" ng-controller="MainController">
 		
-		<ul>
-			<li><h3>Liste des tables </h3></li>
-			<li>
-				<input type="text" ng-model="tableName" />
-				<input type="button" value="+" ng-click="Tables.addTable(tableName); tableName = '';" />
-			</li>
-			<li ng-repeat="t in Tables.tables track by $index">
-				{{t.name}} <!-- affichage du nom de la table -->
-				
-				
-				<!-- boutton d'edition de la table-->
-				<input type="button" value="?" ng-click="$parent.edit = $index;" />
-				
-				<!-- boutton de suppression de la table-->
-				<input type="button" value="x" ng-click="Tables.delTable($index);" />
-			</li>
-		</ul>
-		<div ng-show="edit >= 0">
+		<div class="tblList">
+			<h3>Liste des tables </h3>
+			<ul>
+				<li>
+					<input type="text" ng-model="tableName" />
+					<input type="button" value="+" ng-click="Tables.addTable(tableName); tableName = '';" />
+				</li>
+				<li ng-repeat="t in Tables.tables track by $index">
+					{{t.name}} <!-- affichage du nom de la table -->
+					
+					
+					<!-- boutton d'edition de la table-->
+					<input type="button" value="?" ng-click="$parent.edit = $index;" />
+					
+					<!-- boutton de suppression de la table-->
+					<input type="button" value="x" ng-click="Tables.delTable($index);" />
+				</li>
+			</ul>
+		</div>
+		
+		<div class="editor" ng-show="edit >= 0">
 			<!-- affichage du nom de la table selectionnée -->
 			<h1>table #{{edit}} : {{Tables.tables[edit].name}}</h1>
-			
+			<hr />
+			<h3>Liste des champs</h3>
 			<ul>
-				<li><h3>Liste des champs</h3></li>
 				<li>
 					<input type="text" ng-model="fieldName" />
 					<input type="button" value="+" ng-click="Tables.addField(edit, fieldName); fieldName = '';" />
@@ -89,6 +158,30 @@
 					<input type="button" value="x" ng-click="Tables.delField(edit, $index);" />
 				</li>
 			</ul>
+			
+			<h3>Filtrage de la table</h3>
+			<table border="1">
+				<tr ng-repeat="fil in filtreData track by $index">
+					<th>{{fil.name}}</th>
+					<td><input type="text" ng-model="fil.value" /></td>
+				</tr>
+				<tr>
+					<th>
+						<select ng-model="filtre.name" class="input">
+							<option ng-repeat="f in Tables.tables[edit].fields track by $index" value="{{f}}">{{f}}</option>
+						</select>
+					</th>
+					<td><input class="input" type="text" ng-model="filtre.value"></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="button" value="+" ng-click="filtreData.push(filtre); filtre = {};" />
+					</td>
+				</tr>
+			</table>
+			
+			
+			<h3>Données de la table</h3>
 			<table border="1">
 				
 				<tr>
@@ -97,7 +190,7 @@
 					</th>
 				</tr>
 				
-				<tr ng-repeat="d in Tables.tables[edit].data.slice(page * pSize, (page + 1) * pSize) track by $index" >
+				<tr ng-repeat="d in (Tables.tables[edit].data|valueFilter:filtreData).slice(page * pSize, (page + 1) * pSize) track by $index" >
 					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
 						<input type="text" ng-model="d[f]" />
 					</td>
@@ -105,29 +198,28 @@
 				
 				<tr>
 					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
-						<input  style="background: red;"  type="text" ng-model="$parent.newD[f]" />
+						<input  class="input"  type="text" ng-model="$parent.newD[f]" />
 					</td>
 				</tr>
 				
 				<tr>
-					<td colspan="{{Tables.tables[edit].fields.length}}">
+					<td colspan="{{Tables.tables[edit].fields.length}}" style="text-align: center;">
 						<input type="button" value="ajouter" ng-click="Tables.tables[edit].data.push(newD); newD = {};"/>
 						
-						
-						{{Tables.tables[edit].data.length}}
-						: {{page}} -
-						{{pSize}}
 					</td>
 				</tr>
 				
 				<tr>
-					<td colspan="{{Tables.tables[edit].fields.length}}">
+					<td colspan="{{Tables.tables[edit].fields.length}}" style="text-align: center;">
 						<input ng-show="page > 0" type="button" value="&lt;" ng-click="page = page - 1" />
-						<input type="number" ng-model="pSize" />
+						<input type="number" ng-model="pSize" style="width: 3em;" />
 						<input ng-show="page * pSize < Tables.tables[edit].data.length" type="button" value="&gt;" ng-click="page = page + 1" />
 					</td>
 				</tr>
 			</table>
+			
+			
+			
 		</div>
 	</body>
 </html>
