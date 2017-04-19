@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		
+		<script type="text/javascript" src="angular.min.js"></script>
+		<script type="text/javascript">
+			
+			var DBModule = angular.module('DBModule', []);
+			DBModule.factory('Tables', function () {
+				return {
+					tables: [],
+					addTable: function ( tname ) {
+						this.tables.push({
+							name: tname,
+							fields: [],
+							data: []
+						});
+					},
+					delTable: function ( i ) {
+						this.tables.splice(i, 1);
+					},
+					addField: function ( tableId, fieldName ) {
+						this.tables[tableId].fields.push(fieldName);
+					},
+					delField: function ( tableId, i ) {
+						this.tables[tableId].fields.splice(i, 1);
+					},
+				};
+			});
+			
+			DBModule.controller('MainController', function ( $scope, Tables ) {
+				$scope.Tables = Tables;
+				$scope.edit= -1;
+				$scope.copy = function ( obj ) {
+					console.log("hello");
+					console.log(obj);
+					var nObj = {};
+					for ( var i in obj )
+						nObj[i] = obj[i];
+					return nObj;
+				};
+			});
+			
+		</script>
+		
+	</head>
+	
+	<body ng-app="DBModule" ng-controller="MainController">
+		
+		<ul>
+			<li><h3>Liste des tables </h3></li>
+			<li>
+				<input type="text" ng-model="tableName" />
+				<input type="button" value="+" ng-click="Tables.addTable(tableName); tableName = '';" />
+			</li>
+			<li ng-repeat="t in Tables.tables track by $index">
+				{{t.name}}
+				<input type="button" value="?" ng-click="$parent.edit = $index;" />
+				<input type="button" value="x" ng-click="Tables.delTable($index);" />
+			</li>
+		</ul>
+		<div ng-show="edit >= 0">
+			<h1>table #{{edit}} : {{Tables.tables[edit].name}}</h1>
+			
+			<ul>
+				<li><h3>Liste des champs</h3></li>
+				<li>
+					<input type="text" ng-model="fieldName" />
+					<input type="button" value="+" ng-click="Tables.addField(edit, fieldName); fieldName = '';" />
+				</li>
+				<li ng-repeat="f in Tables.tables[edit].fields track by $index">
+					{{f}}
+					<input type="button" value="x" ng-click="Tables.delField(edit, $index);" />
+				</li>
+			</ul>
+			<table border="1">
+				
+				<tr>
+					<th ng-repeat="f in Tables.tables[edit].fields track by $index" >
+						{{f}}
+					</th>
+				</tr>
+				
+				<tr ng-repeat="d in Tables.tables[edit].data track by $index" >
+					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
+						<input type="text" ng-model="d[f]" />
+					</td>
+				</tr>
+				
+				<tr>
+					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
+						<input  style="background: red;"  type="text" ng-model="$parent.newD[f]" />
+					</td>
+				</tr>
+				
+				<tr>
+					<td colspan="{{Tables.tables[edit].fields.length}}">
+						<input type="button" value="ajouter" ng-click="Tables.tables[edit].data.push(newD); newD = {};"/>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>
