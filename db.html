@@ -79,7 +79,7 @@
 				Tables.addField(0, 'password');
 				
 				$scope.filtreData = [];
-				$scope.pSize = 2;
+				$scope.pSize = 10;
 				$scope.page = 0;
 				$scope.Tables = Tables;
 				$scope.edit= 0;
@@ -94,21 +94,13 @@
 			});
 			
 			DBModule.filter('valueFilter', function () {
-				return function ( data, fData ) {
+				return function ( data, expressionFiltre, $scope ) {
+					if ( !expressionFiltre )
+						return data;
 					var newArray = [];
-					var match = true;
-					
-					
 					for ( var i = 0; i < data.length; i++ ) {
-						
-						for ( var j = 0; j < fData.length; j++ )
-							match = match && ( data[i][fData[j].name] === fData[j].value );
-							
-						if ( match )
+						if ( $scope.$eval(expressionFiltre, data[i]) )
 							newArray.push(data[i]);
-						
-						console.log(match);
-						console.log(data[i]);
 					}
 					return newArray;
 				};
@@ -160,6 +152,12 @@
 			</ul>
 			
 			<h3>Filtrage de la table</h3>
+			<textarea ng-model="expressionFiltre">
+				
+			</textarea>
+			
+			
+			<!--
 			<table border="1">
 				<tr ng-repeat="fil in filtreData track by $index">
 					<th>{{fil.name}}</th>
@@ -179,7 +177,7 @@
 					</td>
 				</tr>
 			</table>
-			
+			-->
 			
 			<h3>Données de la table</h3>
 			<table border="1">
@@ -190,7 +188,7 @@
 					</th>
 				</tr>
 				
-				<tr ng-repeat="d in (Tables.tables[edit].data|valueFilter:filtreData).slice(page * pSize, (page + 1) * pSize) track by $index" >
+				<tr ng-repeat="d in (Tables.tables[edit].data|valueFilter:expressionFiltre:this).slice(page * pSize, (page + 1) * pSize) track by $index" >
 					<td ng-repeat="f in Tables.tables[edit].fields track by $index" >
 						<input type="text" ng-model="d[f]" />
 					</td>
