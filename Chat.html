@@ -2,34 +2,39 @@
 <html>
 <head>
 	<script src="angular.min.js"></script>
+	<script src="angular-websocket/dist/angular-websocket.min.js"></script>
+	<script src="focusIf.min.js"></script>
 	
 	<title>angular</title>
 	
 	<script type="text/javascript">
 		
-		var ModuleChat = angular.module('Chat', []);
+		var ModuleChat = angular.module('Chat', ['focus-if', 'ngWebSocket']);
+		
 		ModuleChat.controller('ChatC', function ( $scope, Messages ) {
 			$scope.Messages = Messages;
 		});
 		
-		ModuleChat.factory('Messages', function () {
+		ModuleChat.factory('Messages', function ( $websocket ) {
+			
+			var msg = [];
+			
+			var ws = $websocket('ws://localhost:8000/');
+			ws.onMessage(function ( data ) {
+				if( data.data )
+					msg.push(JSON.parse(data.data));
+			});
+			
 			return {
-				messages: [
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-					{user: "User1", date:new Date(), msg: 'Hello World !'},
-				],
+				messages: msg,
 				addMessage: function ( pseudo, msg ) {
-					this.messages.push({
+					var m = ({
 						user: pseudo,
-						date: new Date(),
+						date: dateFormat(new Date()),
 						msg: msg
 					});
+					
+					ws.send(JSON.stringify(m));
 				},
 				delMessage: function ( i ) {
 					this.messages.splice(i, 1);
@@ -37,16 +42,13 @@
 			};
 		});
 		
-		ModuleChat.filter('dateFormat', function () {
-			return function ( date ) {
-				return ("0" + date.getDate()).slice(-2) + '/' + 
-					("0" + (date.getMonth() + 1)).slice(-2) + '/' + 
-					date.getFullYear() + " " +
-					("0" + date.getHours()).slice(-2) + ":" +
-					("0" + date.getMinutes()).slice(-2);
-			};
-		});
-		
+		function dateFormat ( date ) {
+			return ("0" + date.getDate()).slice(-2) + '/' + 
+				("0" + (date.getMonth() + 1)).slice(-2) + '/' + 
+				date.getFullYear() + " " +
+				("0" + date.getHours()).slice(-2) + ":" +
+				("0" + date.getMinutes()).slice(-2);
+		};
 		
 	</script>
 	<style type="text/css">
@@ -149,7 +151,7 @@
 		<br />
 		<input type="text" placeholder="pseudo" ng-model="pseudo" />
 		<br />
-		<input type="button" value="connexion" ng-click="connected = pseudo" />
+		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo;" />
 	</div>
 	
 	<div class="chatForm" ng-show="pseudo && connected">
@@ -159,7 +161,7 @@
 			<div class="wrapper">
 			
 				<div class="message" ng-repeat="m in Messages.messages track by $index">
-					<span class="date">{{m.date|dateFormat}}</span>
+					<span class="date">{{m.date}}</span>
 					<span class="pseudo">&lt;{{m.user}}&gt;</span>
 					<div class="text">{{m.msg}}</div>
 				</div>
@@ -169,8 +171,8 @@
 		</div>
 		
 		<div class="input">
-			<textarea ng-model="msg"></textarea>
-			<input type="button" value="envoyer" ng-click="Messages.addMessage(pseudo, msg); msg = '';"/>
+			<textarea ng-model="msg" focus-if="textareaFocus" ng-focus="textareaFocus = 0;"></textarea>
+			<input type="button" value="envoyer" ng-click="Messages.addMessage(pseudo, msg); msg = ''; textareaFocus = 1;"/>
 		</div>
 		
 	</div>
