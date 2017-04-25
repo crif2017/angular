@@ -9,6 +9,8 @@
 	
 	<script type="text/javascript">
 		
+		
+		
 		var ModuleChat = angular.module('Chat', ['focus-if', 'ngWebSocket']);
 		
 		ModuleChat.controller('ChatC', function ( $scope, Messages ) {
@@ -18,15 +20,18 @@
 		ModuleChat.factory('Messages', function ( $websocket ) {
 			
 			var msg = [];
-			
-			var ws = $websocket('ws://localhost:8000/');
-			ws.onMessage(function ( data ) {
-				if( data.data )
-					msg.push(JSON.parse(data.data));
-			});
+			var ws;
 			
 			return {
 				messages: msg,
+				start: function ( pseudo ) {
+					ws = $websocket('ws://localhost:8000/');
+					ws.send(pseudo);
+					ws.onMessage(function ( data ) {
+						if( data.data )
+							msg.push(JSON.parse(data.data));
+					});
+				},
 				addMessage: function ( pseudo, msg ) {
 					var m = ({
 						user: pseudo,
@@ -42,12 +47,30 @@
 			};
 		});
 		
+		ModuleChat.filter('strColor', function () {
+			return function ( str ) {
+				
+				var tot = 1;
+				for ( var i = 0; i < str.length; i++ ) {
+					tot = (tot * str.charCodeAt(i) + str.charCodeAt(i)) % Math.pow(2, 24);
+				}
+				
+				var q1 = Math.floor(tot / Math.pow(256, 2));
+				var r1 = tot - q1 * Math.pow(256, 2);
+				var q2 = Math.floor(r1 / 256);
+				var r2 = r1 - q2 * 256;
+				
+				return "rgb(" + q1 + "," + q2 + "," + r2 + ")";
+			}
+		});
+		
 		function dateFormat ( date ) {
 			return ("0" + date.getDate()).slice(-2) + '/' + 
 				("0" + (date.getMonth() + 1)).slice(-2) + '/' + 
 				date.getFullYear() + " " +
 				("0" + date.getHours()).slice(-2) + ":" +
-				("0" + date.getMinutes()).slice(-2);
+				("0" + date.getMinutes()).slice(-2) + ":" +
+				("0" + date.getSeconds()).slice(-2);
 		};
 		
 	</script>
@@ -145,22 +168,23 @@
 </head>
 <body ng-app="Chat" ng-controller="ChatC">
 	
-	<div class="loginForm" ng-hide="pseudo && connected">
+	<div class="loginForm" ng-hide="connected">
 		<h1>Chat angular</h1>
 		<br />
 		<br />
 		<input type="text" placeholder="pseudo" ng-model="pseudo" />
 		<br />
-		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo;" />
+		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo; pseudo ? Messages.start(pseudo) : 1;" />
 	</div>
 	
-	<div class="chatForm" ng-show="pseudo && connected">
+	<div class="chatForm" ng-show="connected">
 		
 		<div class="messages">
 			<h1>Chat angular : &lt;{{pseudo}}&gt;</h1>
 			<div class="wrapper">
 			
-				<div class="message" ng-repeat="m in Messages.messages track by $index">
+				<div class="message" ng-repeat="m in Messages.messages track by $index"
+					style="color: {{m.user|strColor}};">
 					<span class="date">{{m.date}}</span>
 					<span class="pseudo">&lt;{{m.user}}&gt;</span>
 					<div class="text">{{m.msg}}</div>
