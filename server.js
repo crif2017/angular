@@ -113,5 +113,3 @@ var server = ws.createServer(function ( con ) {
 });
 
 server.listen(8000);
-
-console.log(server);
