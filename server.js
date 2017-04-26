@@ -1,5 +1,6 @@
 var ws = require('nodejs-websocket');
 var clients = [];
+var onCloseDelete = true;
 
 console.log('Demarrage du serveur !');
 
@@ -66,15 +67,23 @@ var server = ws.createServer(function ( con ) {
 			
 		} else {
 			
+			
 			var msgObj = JSON.parse(str);
 			if ( msgObj.msg === '.exit' ) {
 				sendMessage("Fermeture du serveur.");
 				server.close();
 				server.socket.close();
+				onCloseDelete = false;
 				broadcast(function ( c ) { c.close(); c.socket.destroy(); });
+				onCloseDelete = true;
 				// con.close();
 				// con.socket.destroy();
 				clients = [];
+				return;
+			}
+			else if ( msgObj.msg === '.quit' ) {
+				con.close();
+				con.socket.destroy();
 				return;
 			}
 			
@@ -90,11 +99,15 @@ var server = ws.createServer(function ( con ) {
 		console.log('Fermeture de connexion !');
 		
 		// suppression du client deconnecté de la liste des clients
-		for ( var i = 0; i < clients.length; i++ )
-			if ( con === clients[i] )
-				clients.splice(i, 1);
+		if ( onCloseDelete ) {
+			
+			for ( var i = 0; i < clients.length; i++ )
+				if ( con === clients[i] )
+					clients.splice(i, 1);
+			
+			notifyDeco(pseudo);
 		
-		notifyDeco(pseudo);
+		}
 		
 	});
 });
