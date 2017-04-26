@@ -2,6 +2,7 @@
 <html>
 <head>
 	<script src="angular.min.js"></script>
+	<script src="angular-sanitize.min.js"></script>
 	<script src="angular-websocket/dist/angular-websocket.min.js"></script>
 	<script src="focusIf.min.js"></script>
 	
@@ -11,10 +12,18 @@
 		
 		
 		
-		var ModuleChat = angular.module('Chat', ['focus-if', 'ngWebSocket']);
+		var ModuleChat = angular.module('Chat', ['focus-if', 'ngWebSocket', 'ngSanitize']);
 		
 		ModuleChat.controller('ChatC', function ( $scope, Messages ) {
 			$scope.Messages = Messages;
+			$scope.checkEnter = function ( $e ) {
+				if ( $e.keyCode === 13 && !$e.shiftKey ) {
+					Messages.addMessage($scope.pseudo, $scope.msg);
+					$scope.msg = '';
+					$scope.textareaFocus = 1;
+					$e.preventDefault();
+				}
+			};
 		});
 		
 		ModuleChat.factory('Messages', function ( $websocket ) {
@@ -36,7 +45,7 @@
 					var m = ({
 						user: pseudo,
 						date: dateFormat(new Date()),
-						msg: msg
+						msg: msg.replace(/\n/g, '<br />')
 					});
 					
 					ws.send(JSON.stringify(m));
@@ -187,7 +196,7 @@
 					style="color: {{m.user|strColor}};">
 					<span class="date">{{m.date}}</span>
 					<span class="pseudo">&lt;{{m.user}}&gt;</span>
-					<div class="text">{{m.msg}}</div>
+					<div class="text" ng-bind-html="m.msg"></div>
 				</div>
 			
 			</div>
@@ -195,7 +204,7 @@
 		</div>
 		
 		<div class="input">
-			<textarea ng-model="msg" focus-if="textareaFocus" ng-focus="textareaFocus = 0;"></textarea>
+			<textarea ng-keypress="checkEnter($event);" ng-model="msg" focus-if="textareaFocus" ng-focus="textareaFocus = 0;"></textarea>
 			<input type="button" value="envoyer" ng-click="Messages.addMessage(pseudo, msg); msg = ''; textareaFocus = 1;"/>
 		</div>
 		
