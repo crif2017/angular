@@ -11,7 +11,32 @@ function dateFormat ( date ) {
 		("0" + date.getMinutes()).slice(-2) + ":" +
 		("0" + date.getSeconds()).slice(-2);
 };
-		
+	
+
+function broadcast ( cb ) {
+	for ( var i = 0; i < clients.length; i++ )
+		cb(clients[i]);
+}
+
+function sendMessage ( msg ) {
+	broadcast(function ( con ) {
+		con.sendText(JSON.stringify({
+			date: dateFormat(new Date()),
+			user: "Server",
+			msg: msg
+		}));
+	});
+}
+
+function deco ( con ) {
+	con.sendText('Deconnexion');
+	con.close();
+}
+
+function notifyDeco ( pseudo ) {
+	sendMessage("Deconnexion de l'utilisateur : " + pseudo);
+}
+	
 // creer le server
 var server = ws.createServer(function ( con ) {
 	
@@ -36,34 +61,26 @@ var server = ws.createServer(function ( con ) {
 			first = false;
 			pseudo = str;
 			console.log('Utilisateur declaré : ' + pseudo + ' !');
-			for ( var i = 0; i < clients.length; i++ ) {
-				clients[i].sendText(JSON.stringify({date: dateFormat(new Date()), user: "Server", msg: "Connexion de l'utilisateur : " + pseudo}));
-			}
 			
+			sendMessage("Connexion de l'utilisateur : " + pseudo);
 			
 		} else {
 			
-			
-			
 			var msgObj = JSON.parse(str);
 			if ( msgObj.msg === '.exit' ) {
-				console.log("Demande de fermeture du serveur.");
-				con.sendText(JSON.stringify({date: dateFormat(new Date()), user: "Server", msg: "Vous êtes deconnecté"}));
-				con.close();
+				sendMessage("Fermeture du serveur.");
+				server.close();
+				server.socket.close();
+				broadcast(function ( c ) { c.close(); c.socket.destroy(); });
+				// con.close();
+				// con.socket.destroy();
+				clients = [];
 				return;
-				// for ( var i = 0; i < clients.length; i++ ) {
-					// clients[i].socket.destroy();
-				// }
-				// server.close();
-				// return;
 			}
 			
 			console.log('Nouveau texte !');
+			broadcast(function ( c ) { c.sendText(str); });
 			
-			// envoie du texte à tous les clients
-			for ( var i = 0; i < clients.length; i++ ) {
-				clients[i].sendText(str);
-			}
 		}
 	});
 	
@@ -77,11 +94,11 @@ var server = ws.createServer(function ( con ) {
 			if ( con === clients[i] )
 				clients.splice(i, 1);
 		
-		for ( var i = 0; i < clients.length; i++ ) {
-				clients[i].sendText(JSON.stringify({date: dateFormat(new Date()), user: "Server", msg: "Deconnexion de l'utilisateur : " + pseudo}));
-			}
+		notifyDeco(pseudo);
 		
 	});
 });
 
 server.listen(8000);
+
+console.log(server);
