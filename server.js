@@ -16,15 +16,25 @@ function dateFormat ( date ) {
 
 function broadcast ( cb ) {
 	for ( var i = 0; i < clients.length; i++ )
-		cb(clients[i]);
+		cb(clients[i].socket);
 }
 
 function sendMessage ( msg ) {
 	broadcast(function ( con ) {
 		con.sendText(JSON.stringify({
+			type: 'msg',
 			date: dateFormat(new Date()),
 			user: "Server",
 			msg: msg
+		}));
+	});
+}
+
+function sendUsers ( ) {
+	broadcast(function ( con ) {
+		con.sendText(JSON.stringify({
+			type: 'users',
+			list: clients.map(function ( e ) { return e.pseudo; })
 		}));
 	});
 }
@@ -48,11 +58,8 @@ var server = ws.createServer(function ( con ) {
 	
 	console.log('Nouvelle connexion !');
 	
-	// ajouter le client courant à la liste des clients
-	clients.push(con);
-	
 	// envoie du message de bienvenue
-	con.sendText(JSON.stringify({date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
+	con.sendText(JSON.stringify({type: 'msg', date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
 	
 	// affecter l'evenement de reception de texte
 	con.on('text', function ( str ) {
@@ -64,7 +71,16 @@ var server = ws.createServer(function ( con ) {
 			console.log('Utilisateur declaré : ' + pseudo + ' !');
 			
 			sendMessage("Connexion de l'utilisateur : " + pseudo);
-			
+			// ajouter le client courant à la liste des clients
+		
+		
+		clients.push({
+			socket: con,
+			pseudo: str
+		});
+		
+			sendUsers();
+		
 		} else {
 			
 			
@@ -102,10 +118,11 @@ var server = ws.createServer(function ( con ) {
 		if ( onCloseDelete ) {
 			
 			for ( var i = 0; i < clients.length; i++ )
-				if ( con === clients[i] )
+				if ( con === clients[i].socket )
 					clients.splice(i, 1);
 			
 			notifyDeco(pseudo);
+			sendUsers();
 		
 		}
 		

@@ -29,20 +29,30 @@
 		ModuleChat.factory('Messages', function ( $websocket ) {
 			
 			var msg = [];
+			var users = {list: []};
 			var ws;
 			
 			return {
 				messages: msg,
+				users: users,
 				start: function ( pseudo ) {
 					ws = $websocket('ws://localhost:8000/');
 					ws.send(pseudo);
 					ws.onMessage(function ( data ) {
-						if( data.data )
-							msg.push(JSON.parse(data.data));
+						if( data.data ) {
+							var jsonData = JSON.parse(data.data);
+							if ( jsonData.type === 'msg' )
+								msg.push(jsonData);
+							else {
+								users.list = jsonData.list;
+								console.log(users.list);
+							}
+						}
 					});
 				},
 				addMessage: function ( pseudo, msg ) {
 					var m = ({
+						type: "msg",
 						user: pseudo,
 						date: dateFormat(new Date()),
 						msg: msg.replace(/\n/g, '<br />')
@@ -121,7 +131,7 @@
 			top: 4em;
 			bottom: 8.5em;
 			left: 0;
-			right: 0;
+			right: 10em;
 			overflow: auto;
 		}
 		
@@ -200,6 +210,10 @@
 				</div>
 			
 			</div>
+			
+			<ul class="userList" style="position: absolute; top: 0; right: 0; width: 10em; padding: 0; margin: 0;">
+				<li ng-repeat="u in Messages.users.list track by $index">{{u}}</li>
+			</ul>
 			
 		</div>
 		
