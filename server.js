@@ -48,6 +48,15 @@ function deco ( con ) {
 function notifyDeco ( pseudo ) {
 	sendMessage("Deconnexion de l'utilisateur : " + pseudo);
 }
+
+function logUser ( userData ) {
+	// connexion à MySQL
+	
+	// recuperation de la ligne avec login et password identique
+	
+	// si pas de resultat retourner false
+	// sinon retourner true.
+}
 	
 // creer le server
 var server = ws.createServer(function ( con ) {
@@ -73,17 +82,30 @@ var server = ws.createServer(function ( con ) {
 		if ( first ) {
 			
 			first = false;
-			pseudo = str;
+			var tmp = JSON.parse(str);
+			pseudo = tmp.pseudo;
+			
+			
+			var ok = logUser(tmp);
+			con.sendText(JSON.stringify({
+					type: 'login',
+					result: ok,
+			}));
+			if ( !ok ) {
+				con.close();
+				return;
+			}
+			
+			
 			console.log('Utilisateur declaré : ' + pseudo + ' !');
 			
 			sendMessage("Connexion de l'utilisateur : " + pseudo);
 			// ajouter le client courant à la liste des clients
 		
-		
-		clients.push({
-			socket: con,
-			pseudo: str
-		});
+			clients.push({
+				socket: con,
+				pseudo: pseudo
+			});
 		
 			sendUsers();
 		

@@ -16,6 +16,12 @@
 		
 		ModuleChat.controller('ChatC', function ( $scope, Messages ) {
 			$scope.Messages = Messages;
+			$scope.resetLogin = function () {
+				$scope.pseudo = '';
+				$scope.password = '';
+				$scope.connected = false;
+				//Messages.stop();
+			};
 			$scope.checkEnter = function ( $e ) {
 				if ( $e.keyCode === 13 && !$e.shiftKey ) {
 					Messages.addMessage($scope.pseudo, $scope.msg);
@@ -35,15 +41,20 @@
 			return {
 				messages: msg,
 				users: users,
-				start: function ( pseudo ) {
+				start: function ( pseudo, password, resetLogin ) {
 					ws = $websocket('ws://localhost:8000/');
-					ws.send(pseudo);
+					ws.send({pseudo: pseudo, password: password});
 					ws.onMessage(function ( data ) {
 						if( data.data ) {
 							var jsonData = JSON.parse(data.data);
 							if ( jsonData.type === 'msg' )
 								msg.push(jsonData);
-							else {
+							else if ( jsonData.type === 'login' ) {
+								
+								if ( !jsonData.result )
+									resetLogin();
+								
+							} else {
 								users.list = jsonData.list;
 								console.log(users.list);
 							}
@@ -62,6 +73,9 @@
 				},
 				delMessage: function ( i ) {
 					this.messages.splice(i, 1);
+				},
+				stop: function () {
+					ws.close();
 				}
 			};
 		});
@@ -135,6 +149,7 @@
 			overflow: auto;
 		}
 		
+		
 		.message {
 			clear: both;
 		}
@@ -193,7 +208,9 @@
 		<br />
 		<input type="text" placeholder="pseudo" ng-model="pseudo" />
 		<br />
-		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo; pseudo ? Messages.start(pseudo) : 1;" />
+		<input type="password" placeholder="password" ng-model="password" />
+		<br />
+		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo; pseudo ? Messages.start(pseudo, password, resetLogin) : 1;" />
 	</div>
 	
 	<div class="chatForm" ng-show="connected">
@@ -211,7 +228,7 @@
 			
 			</div>
 			
-			<ul class="userList" style="position: absolute; top: 0; right: 0; width: 10em; padding: 0; margin: 0;">
+			<ul class="userList" style="position: absolute; top: 4em; right: 0; width: 9em; padding: 0; margin: 0;">
 				<li ng-repeat="u in Messages.users.list track by $index">{{u}}</li>
 			</ul>
 			
