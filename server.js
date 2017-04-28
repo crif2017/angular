@@ -1,6 +1,7 @@
 var ws = require('nodejs-websocket');
 var clients = [];
 var onCloseDelete = true;
+var messages = [];
 
 console.log('Demarrage du serveur !');
 
@@ -61,6 +62,11 @@ var server = ws.createServer(function ( con ) {
 	// envoie du message de bienvenue
 	con.sendText(JSON.stringify({type: 'msg', date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
 	
+	// envoyer la liste des messages
+	for ( var i = 0; i < messages.length; i++ )
+		con.sendText(messages[i]);
+	
+	
 	// affecter l'evenement de reception de texte
 	con.on('text', function ( str ) {
 		
@@ -105,6 +111,9 @@ var server = ws.createServer(function ( con ) {
 			
 			console.log('Nouveau texte !');
 			broadcast(function ( c ) { c.sendText(str); });
+			messages.push(str);
+			if ( messages.length > 10 )
+				messages.splice(0, 1);
 			
 		}
 	});
