@@ -3,7 +3,18 @@ var clients = [];
 var onCloseDelete = true;
 var messages = [];
 
-console.log('Demarrage du serveur !');
+var db = require('node-mysql');
+var DB = db.DB;
+var BaseRow = db.Row;
+var BaseTable = db.Table;
+
+	
+var box = new DB({
+    host     : 'localhost',
+    user     : 'root',
+    password : '',
+    database : 'chat'
+});
 
 function dateFormat ( date ) {
 	return ("0" + date.getDate()).slice(-2) + '/' + 
@@ -49,14 +60,6 @@ function notifyDeco ( pseudo ) {
 	sendMessage("Deconnexion de l'utilisateur : " + pseudo);
 }
 
-function logUser ( userData ) {
-	// connexion à MySQL
-	
-	// recuperation de la ligne avec login et password identique
-	
-	// si pas de resultat retourner false
-	// sinon retourner true.
-}
 	
 // creer le server
 var server = ws.createServer(function ( con ) {
@@ -68,8 +71,6 @@ var server = ws.createServer(function ( con ) {
 	
 	console.log('Nouvelle connexion !');
 	
-	// envoie du message de bienvenue
-	con.sendText(JSON.stringify({type: 'msg', date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
 	
 	// envoyer la liste des messages
 	for ( var i = 0; i < messages.length; i++ )
@@ -86,28 +87,35 @@ var server = ws.createServer(function ( con ) {
 			pseudo = tmp.pseudo;
 			
 			
-			var ok = logUser(tmp);
-			con.sendText(JSON.stringify({
-					type: 'login',
-					result: ok,
-			}));
-			if ( !ok ) {
-				con.close();
-				return;
-			}
+			logUser(tmp, function ( isValidUser ) {
+				
+				
+				
+				con.sendText(JSON.stringify({
+						type: 'login',
+						result: isValidUser,
+				}));
+				if ( !isValidUser ) {
+					con.close();
+					return;
+				}
+				
+				// envoie du message de bienvenue
+				con.sendText(JSON.stringify({type: 'msg', date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
+
+				
+				console.log('Utilisateur declaré : ' + pseudo + ' !');
+				
+				sendMessage("Connexion de l'utilisateur : " + pseudo);
+				// ajouter le client courant à la liste des clients
 			
+				clients.push({
+					socket: con,
+					pseudo: pseudo
+				});
 			
-			console.log('Utilisateur declaré : ' + pseudo + ' !');
-			
-			sendMessage("Connexion de l'utilisateur : " + pseudo);
-			// ajouter le client courant à la liste des clients
-		
-			clients.push({
-				socket: con,
-				pseudo: pseudo
-			});
-		
-			sendUsers();
+				sendUsers();
+		});
 		
 		} else {
 			
@@ -160,4 +168,33 @@ var server = ws.createServer(function ( con ) {
 	});
 });
 
-server.listen(8000);
+var dbCon;
+
+function logUser ( userData, cb ) {
+	
+	var sql = DB.format(
+		"SELECT * FROM users WHERE login = ? AND password = ?;",
+		[userData.pseudo, userData.password]
+	);
+	console.log(sql);
+	
+	dbCon.query(sql, function ( err, rows, fields ) {
+		if ( err )
+			throw err;
+		
+		cb(rows.length ? true : false);
+		
+	});
+	
+	// recuperation de la ligne avec login et password identique
+	
+	// si pas de resultat retourner false
+	// sinon retourner true.
+}
+
+box.connect(function ( con ) {
+	dbCon = con;
+	console.log("Connection etablie");
+	server.listen(8000);
+	console.log('Demarrage du serveur !');
+});
