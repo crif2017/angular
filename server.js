@@ -186,10 +186,6 @@ function logUser ( userData, cb ) {
 		
 	});
 	
-	// recuperation de la ligne avec login et password identique
-	
-	// si pas de resultat retourner false
-	// sinon retourner true.
 }
 
 box.connect(function ( con ) {
