@@ -22,6 +22,12 @@
 				$scope.connected = false;
 				//Messages.stop();
 			};
+			
+			$scope.forceLogin = function () {
+				$scope.connected = $scope.pseudo;
+				$scope.textareaFocus = $scope.pseudo
+			};
+			
 			$scope.checkEnter = function ( $e ) {
 				if ( $e.keyCode === 13 && !$e.shiftKey ) {
 					Messages.addMessage($scope.pseudo, $scope.msg);
@@ -41,9 +47,13 @@
 			return {
 				messages: msg,
 				users: users,
-				start: function ( pseudo, password, resetLogin ) {
+				start: function ( pseudo, password, resetLogin, register ) {
 					ws = $websocket('ws://localhost:8000/');
-					ws.send({pseudo: pseudo, password: password});
+					ws.send({
+						pseudo: pseudo,
+						password: password,
+						register: register ? true : false
+					});
 					ws.onMessage(function ( data ) {
 						if( data.data ) {
 							var jsonData = JSON.parse(data.data);
@@ -53,6 +63,9 @@
 								
 								if ( !jsonData.result )
 									resetLogin();
+								
+								else if ( register )
+									register();
 								
 							} else {
 								users.list = jsonData.list;
@@ -76,7 +89,7 @@
 				},
 				stop: function () {
 					ws.close();
-				}
+				},
 			};
 		});
 		
@@ -211,6 +224,8 @@
 		<input type="password" placeholder="password" ng-model="password" />
 		<br />
 		<input type="button" value="connexion" ng-click="connected = pseudo; textareaFocus = pseudo; pseudo ? Messages.start(pseudo, password, resetLogin) : 1;" />
+		
+		<input type="button" value="s'inscrire" ng-click="Messages.start(pseudo, password, resetLogin, forceLogin)" />
 	</div>
 	
 	<div class="chatForm" ng-show="connected">

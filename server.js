@@ -8,6 +8,8 @@ var DB = db.DB;
 var BaseRow = db.Row;
 var BaseTable = db.Table;
 
+var dbCon;
+
 	
 var box = new DB({
     host     : 'localhost',
@@ -87,7 +89,7 @@ var server = ws.createServer(function ( con ) {
 			pseudo = tmp.pseudo;
 			
 			
-			logUser(tmp, function ( isValidUser ) {
+			if ( !tmp.register ) logUser(tmp, function ( isValidUser ) {
 				
 				
 				
@@ -115,7 +117,40 @@ var server = ws.createServer(function ( con ) {
 				});
 			
 				sendUsers();
-		});
+			});
+			else {
+				
+				findUser(tmp.pseudo, function ( userExists ) {
+					
+					con.sendText(JSON.stringify({
+							type: 'login',
+							result: userExists ? false : true,
+					}));
+					if ( userExists ) {
+						con.close();
+						return;
+					}
+					
+					addUser(pseudo, tmp.password);
+					// envoie du message de bienvenue
+					con.sendText(JSON.stringify({type: 'msg', date: dateFormat(new Date()), user: "Server", msg: "Bienvenue !"}));
+
+					
+					console.log('Utilisateur declaré : ' + pseudo + ' !');
+					
+					sendMessage("Connexion de l'utilisateur : " + pseudo);
+					// ajouter le client courant à la liste des clients
+				
+					clients.push({
+						socket: con,
+						pseudo: pseudo
+					});
+				
+					sendUsers();
+					
+				});
+				
+			}
 		
 		} else {
 			
@@ -131,6 +166,8 @@ var server = ws.createServer(function ( con ) {
 				// con.close();
 				// con.socket.destroy();
 				clients = [];
+				dbCon.release();
+				box.end();
 				return;
 			}
 			else if ( msgObj.msg === '.quit' ) {
@@ -168,8 +205,6 @@ var server = ws.createServer(function ( con ) {
 	});
 });
 
-var dbCon;
-
 function logUser ( userData, cb ) {
 	
 	var sql = DB.format(
@@ -186,6 +221,31 @@ function logUser ( userData, cb ) {
 		
 	});
 	
+}
+
+function findUser ( login, cb ) {
+	
+	var sql = DB.format(
+		"SELECT * FROM users WHERE login = ?;",
+		[login]
+	);
+	
+	dbCon.query(sql, function ( err, rows, fields ) {
+		if ( err )
+			throw err;
+		
+		cb(rows.length ? true : false);
+		
+	});
+	
+}
+
+function addUser ( login, password ) {
+	var sql = DB.format(
+		"INSERT INTO users ( login, password ) VALUES ( ?, ? )",
+		[login, password]
+	);
+	dbCon.query(sql, function () {});
 }
 
 box.connect(function ( con ) {
